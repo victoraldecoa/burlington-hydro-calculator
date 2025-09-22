@@ -33,7 +33,7 @@ jobs:
       - name: Build
         id: build
         run: |
-          clj -M -m cljs.main -d "out" -c burlington-hydro-calculator.static-website -O advanced
+          clojure -M -m cljs.main -d "out" -c burlington-hydro-calculator.static-website -O advanced
           mkdir build_outputs_folder
           cp -r out build_outputs_folder
           cp index.html build_outputs_folder
