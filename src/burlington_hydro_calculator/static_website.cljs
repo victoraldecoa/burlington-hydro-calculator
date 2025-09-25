@@ -1,4 +1,6 @@
-(ns burlington-hydro-calculator.static-website)
+(ns burlington-hydro-calculator.static-website
+  (:require
+   [clojure.string :as s]))
 
 (def periods [{:title "Weekdays 7 am to 11 am"
                :tou-price 12.2
@@ -74,3 +76,37 @@
 (let [table-html (periods-table-html)
       hourly-prices-div (.getElementById js/document "costs-per-period")]
   (set! (.-innerHTML hourly-prices-div) table-html))
+
+(defn read-csv-file [file on-load-callback]
+  (let [reader (js/FileReader.)]
+    (set! (.-onload reader)
+          (fn [e]
+            (let [data (.-result (.-target e))]
+              (on-load-callback
+               (->> (.split data "\n")
+                    (map #(s/split % #","))
+                    (remove #(empty? (first %))))))))
+    (.readAsText reader file)))
+
+;; Usage example:
+;; Add an <input type="file" id="csv-file-input" /> to your HTML.
+;; Then use the following code to read the file and process the data:
+
+(defn handle-csv-upload []
+  (let [input (.getElementById js/document "csv-file-input")]
+    (set! (.-onchange input)
+          (fn [_e]
+            (let [file (aget (.-files input) 0)]
+              (read-csv-file file
+                             (fn [energy-usage-data]
+                               (js/console.log 
+                                (str (->> energy-usage-data 
+                                          (drop 1)
+                                          (map (fn [[period usage]]
+                                                 (str "Time: " (.toLocaleString (js/Date. (str (subs period 0 16) " EDT"))) ", Usage: " usage)))))))))))))
+
+;; Call handle-csv-upload once on page load to set up the event handler.
+(handle-csv-upload)
+
+;; Energy consumption time period,Usage (kilowatt-hours)
+;; 2025/08/01 01:00 to 2025/08/01 02:00,0.06
